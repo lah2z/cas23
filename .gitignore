@@ -62,4 +62,7 @@ Thumbs.db
 # static/images/products/*.jpeg
 
 # Telegram bot token (если хранится в отдельном файле)
-# config.py 
+# config.py
+
+# Vercel
+.vercel 
