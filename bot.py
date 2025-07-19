@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
@@ -8,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 logging.basicConfig(level=logging.INFO)
 
 # Токен бота
-TOKEN = '7851061564:AAH0L5XyBG5I5Bigbgo3LqKRigdNUL-a1EU'
+TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '7851061564:AAH0L5XyBG5I5Bigbgo3LqKRigdNUL-a1EU')
 
 # Инициализация бота и диспетчера
 bot = Bot(token=TOKEN)
