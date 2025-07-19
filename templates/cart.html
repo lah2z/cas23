@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="cart-screen">
+    <div class="header">
+        <h1>Корзина</h1>
+    </div>
+    
+    <div class="content">
+        {% if cart_items %}
+            {% for item in cart_items %}
+                <div class="cart-item" id="item-{{ item.safe_key }}">
+                    <input type="hidden" class="cart-original-key" value="{{ item.key }}">
+                    <div class="item-image">
+                        <img src="{{ url_for('static', filename='images/products/' + item.image) if item.image and not item.image.startswith('/') else item.image }}" alt="{{ item.title }}">
+                    </div>
+                    <div class="item-details">
+                        <h3>{{ item.title }}</h3>
+                        {% if item.options %}
+                            <div class="cart-options">
+                                <small>Опции: {{ item.options|join(', ') }}</small>
+                            </div>
+                        {% endif %}
+                        <p class="price">{{ item.price }} ₽</p>
+                        <div class="quantity-controls">
+                            <button onclick="updateQuantity('{{ item.safe_key }}', -1)">-</button>
+                            <span>{{ item.quantity }}</span>
+                            <button onclick="updateQuantity('{{ item.safe_key }}', 1)">+</button>
+                        </div>
+                    </div>
+                    <button class="delete-button" onclick="removeItem('{{ item.safe_key }}')">×</button>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-cart">
+                <p>Корзина пуста</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="bottom-bar">
+        <div class="total">
+            <span>Итого:</span>
+            <span class="total-amount">{{ total }} ₽</span>
+        </div>
+        <button class="checkout-btn" onclick="checkout()">Оформить заказ</button>
+    </div>
+</div>
+
+<script>
+function updateQuantity(safeKey, delta) {
+    const itemDiv = document.getElementById(`item-${safeKey}`);
+    const originalKey = itemDiv.querySelector('.cart-original-key').value;
+    const quantityElement = itemDiv.querySelector('.quantity-controls span');
+    const currentQuantity = parseInt(quantityElement.textContent);
+    if (currentQuantity === 1 && delta === -1) {
+        // Не уменьшаем ниже 1, не отправляем запрос
+        return;
+    }
+    fetch('/cart/update_quantity', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            item_id: originalKey,
+            delta: delta
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const newQuantity = currentQuantity + delta;
+            if (newQuantity > 0) {
+                quantityElement.textContent = newQuantity;
+                document.querySelector('.total-amount').textContent = data.total + ' ₽';
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function removeItem(safeKey) {
+    const itemDiv = document.getElementById(`item-${safeKey}`);
+    const originalKey = itemDiv.querySelector('.cart-original-key').value;
+    fetch('/cart/remove_item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            item_id: originalKey
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            itemDiv.remove();
+            document.querySelector('.total-amount').textContent = data.total + ' ₽';
+            if (document.querySelectorAll('.cart-item').length === 0) {
+                document.querySelector('.content').innerHTML = '<div class="empty-cart"><p>Корзина пуста</p></div>';
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function checkout() {
+    const totalText = document.querySelector('.total-amount').textContent;
+    const total = parseFloat(totalText.replace(' ₽', ''));
+    
+    if (total === 0) {
+        window.location.href = '/';
+    } else {
+        window.location.href = '/pay';
+    }
+}
+</script>
+
+<style>
+.cart-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: white;
+}
+
+.header {
+    padding: 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.item-image {
+    width: 80px;
+    height: 80px;
+    margin-right: 15px;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-details h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+
+.price {
+    color: #2196F3;
+    margin: 0 0 10px 0;
+    font-weight: bold;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+}
+
+.quantity-controls button {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quantity-controls span {
+    min-width: 20px;
+    text-align: center;
+}
+
+.delete-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.delete-button:hover {
+    background: #ff0000;
+}
+
+.bottom-bar {
+    padding: 20px;
+    background: white;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.total {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.checkout-btn {
+    width: 100%;
+    padding: 15px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.checkout-btn:hover {
+    background: #1976D2;
+}
+
+.empty-cart {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+</style>
+{% endblock %} 

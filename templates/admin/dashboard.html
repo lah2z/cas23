@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Панель управления</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Товары</h3>
+            <p class="stat-number">{{ products_count }}</p>
+            <a href="{{ url_for('admin_products') }}" class="stat-link">Управление товарами</a>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Категории</h3>
+            <p class="stat-number">{{ categories_count }}</p>
+            <a href="{{ url_for('admin_categories') }}" class="stat-link">Управление категориями</a>
+        </div>
+    </div>
+    
+    <div class="recent-activity">
+        <h2>Последние действия</h2>
+        <div class="activity-list">
+            {% if recent_products %}
+                {% for product in recent_products %}
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <span class="activity-type">Товар</span>
+                        <span class="activity-title">{{ product.title }}</span>
+                    </div>
+                    <div class="activity-date">{{ product.created_at }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-activity">Нет последних действий</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

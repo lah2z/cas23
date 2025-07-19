@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.title }}{% endblock %}
+
+{% block content %}
+<div class="product-page">
+    <div class="product-container">
+        <div class="product-images">
+            <div class="image-carousel">
+                <div class="carousel-container">
+                    {% if product.image %}
+                    <div class="carousel-slide active">
+                        <img src="{{ url_for('static', filename='images/products/' + product.image) }}" alt="{{ product.title }}">
+    </div>
+                    {% endif %}
+                    {% if product.images %}
+                        {% for image in product.images %}
+                        <div class="carousel-slide">
+                            <img src="{{ url_for('static', filename='images/products/' + image) }}" alt="{{ product.title }}">
+        </div>
+                        {% endfor %}
+                    {% endif %}
+            </div>
+                {% if (product.image and product.images) or (product.images and product.images|length > 1) %}
+                <div class="carousel-controls">
+                    <button class="carousel-prev" onclick="prevSlide()">❮</button>
+                    <button class="carousel-next" onclick="nextSlide()">❯</button>
+        </div>
+                <div class="carousel-dots">
+                    {% set total_slides = (product.images|length + 1) if product.image else product.images|length %}
+                    {% for i in range(total_slides) %}
+                    <span class="dot {% if loop.first %}active{% endif %}" onclick="goToSlide({{ loop.index0 }})"></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="product-details">
+            <h1>{{ product.title }}</h1>
+            <div class="product-price" id="productPrice" data-base-price="{{ product.price }}">{{ '{:,.0f}'.format(product.price).replace(',', ' ') }} ₽</div>
+            
+            {% if product.description %}
+            <div class="product-description">
+                <h2>Описание</h2>
+                <p>{{ product.description }}</p>
+                    </div>
+            {% endif %}
+            
+            {% if product.advantages %}
+            <div class="product-advantages">
+                <h2>Преимущества</h2>
+                <ul>
+                    {% for advantage in product.advantages %}
+                    <li>{{ advantage }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if product.specifications %}
+            <div class="product-specs">
+                <h2>Характеристики</h2>
+                <ul>
+                    {% for key, value in product.specifications.items() %}
+                    <li>
+                        <span class="spec-key">{{ key }}:</span>
+                        <span class="spec-value">{{ value }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+        </div>
+            {% endif %}
+            
+            {% if product.options %}
+            <div class="product-options">
+                <h2>Дополнительные опции</h2>
+                <ul>
+                    {% for name, price in product.options.items() %}
+                    <li class="option-item">
+                        <label class="option-checkbox">
+                            <input type="checkbox" name="option" value="{{ name }}">
+                            <span class="checkbox-mark"></span>
+                        </label>
+                        <span class="option-name">{{ name }}</span>
+                        <span class="option-price">+{{ '{:,.0f}'.format(price).replace(',', ' ') }} ₽</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                    </div>
+            {% endif %}
+            
+            <div class="product-actions">
+                <button class="add-to-cart" data-product-id="{{ product.id }}">Добавить в корзину</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll('.carousel-slide');
+const dots = document.querySelectorAll('.dot');
+
+function showSlide(n) {
+    if (!slides || !dots || !slides.length || !dots.length) return;
+    slides.forEach(slide => slide.classList.remove('active'));
+    dots.forEach(dot => dot.classList.remove('active'));
+    currentSlide = (n + slides.length) % slides.length;
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
+}
+
+function nextSlide() {
+    showSlide(currentSlide + 1);
+}
+
+function prevSlide() {
+    showSlide(currentSlide - 1);
+}
+
+function goToSlide(n) {
+    showSlide(n);
+}
+
+// Автоматическая прокрутка каждые 5 секунд
+setInterval(nextSlide, 5000);
+
+// Динамический пересчёт цены при выборе опций
+const optionCheckboxes = document.querySelectorAll('.option-checkbox input[type="checkbox"]');
+const productPriceElem = document.getElementById('productPrice');
+const basePrice = parseFloat(productPriceElem.dataset.basePrice);
+
+function recalcPrice() {
+    let total = basePrice;
+    optionCheckboxes.forEach(cb => {
+        if (cb.checked) {
+            const priceElem = cb.closest('.option-item').querySelector('.option-price');
+            if (priceElem) {
+                // Убираем все нецифровые символы
+                const add = parseFloat(priceElem.textContent.replace(/[^\d\.]/g, ''));
+                if (!isNaN(add)) total += add;
+            }
+        }
+    });
+    productPriceElem.textContent = total.toLocaleString('ru-RU') + ' ₽';
+}
+optionCheckboxes.forEach(cb => cb.addEventListener('change', recalcPrice));
+
+// Обработка добавления в корзину с учётом опций
+const addToCartBtn = document.querySelector('.add-to-cart');
+if (addToCartBtn) {
+    addToCartBtn.addEventListener('click', async function() {
+        const productId = this.dataset.productId;
+        // Собираем выбранные опции
+        const selectedOptions = Array.from(optionCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ product_id: productId, options: selectedOptions })
+            });
+            if (response.ok) {
+                window.location.href = '/'; // редирект на главную
+            } else {
+                alert('Ошибка при добавлении товара в корзину');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при добавлении товара в корзину');
+        }
+    });
+}
+</script>
+{% endblock %}

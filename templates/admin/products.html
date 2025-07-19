@@ -1,0 +1,305 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Управление товарами{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <h1>Управление товарами</h1>
+    <button class="add-button" onclick="showAddProductForm()">Добавить товар</button>
+</div>
+
+<div class="products-list">
+    {% for product in products %}
+    <div class="product-card">
+        <div class="product-image">
+            <img src="{{ product.image }}" alt="{{ product.title }}">
+        </div>
+        <div class="product-info">
+            <h3>{{ product.title }}</h3>
+            <p class="product-price">{{ '{:,.0f}'.format(product.price).replace(',', ' ') }} ₽</p>
+            <p class="product-category">Категория: {{ product.category.name }}</p>
+        </div>
+        <div class="product-actions">
+            <button class="edit-button" onclick="editProduct({{ product.id }})">Редактировать</button>
+            <button class="delete-button" onclick="deleteProduct({{ product.id }})">Удалить</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Форма добавления/редактирования товара -->
+<div id="productFormModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle">Добавить товар</h2>
+        <form id="productForm" method="POST" enctype="multipart/form-data">
+            <input type="hidden" id="productId" name="product_id">
+            
+            <div class="form-group">
+                <label for="productTitle">Название товара</label>
+                <input type="text" id="productTitle" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="productCategory">Категория</label>
+                <select id="productCategory" name="category_id" required>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="productPrice">Цена</label>
+                <input type="number" id="productPrice" name="price" step="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="productDescription">Описание</label>
+                <textarea id="productDescription" name="description" rows="4"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="image">Основное изображение</label>
+                <input type="file" id="image" name="image" accept="image/*">
+            </div>
+            
+            <div class="form-group">
+                <label for="images">Дополнительные изображения</label>
+                <input type="file" id="images" name="images" accept="image/*" multiple>
+                <small class="form-text text-muted">Выберите несколько изображений, удерживая Ctrl (Windows) или Command (Mac)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="productAdvantages">Преимущества</label>
+                <textarea id="productAdvantages" name="advantages" rows="4" placeholder="Каждое преимущество с новой строки"></textarea>
+                <small class="form-text">Введите преимущества, каждое с новой строки</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="productSpecifications">Технические характеристики</label>
+                <div id="specs-container">
+                    <div class="spec-row">
+                        <input type="text" class="spec-key" placeholder="Название характеристики">
+                        <input type="text" class="spec-value" placeholder="Значение">
+                        <button type="button" class="remove-spec">×</button>
+                    </div>
+                </div>
+                <button type="button" id="add-spec" class="add-button">Добавить характеристику</button>
+                <input type="hidden" id="specs" name="specifications">
+            </div>
+            
+            <div class="form-group">
+                <label>Опции</label>
+                <div id="options-container">
+                    <div class="option-row">
+                        <input type="text" class="option-name" placeholder="Название опции">
+                        <input type="number" class="option-price" placeholder="Цена" step="0.01">
+                        <button type="button" class="remove-option">×</button>
+                    </div>
+                </div>
+                <button type="button" id="add-option" class="add-button">Добавить опцию</button>
+                <input type="hidden" id="options" name="options">
+            </div>
+            
+            <button type="submit" class="submit-button">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function showAddProductForm() {
+    document.getElementById('modalTitle').textContent = 'Добавить товар';
+    document.getElementById('productId').value = '';
+    document.getElementById('productForm').reset();
+    document.getElementById('productForm').action = "{{ url_for('admin_add_product') }}";
+    document.getElementById('productFormModal').style.display = 'block';
+}
+
+function editProduct(id) {
+    document.getElementById('modalTitle').textContent = 'Редактировать товар';
+    document.getElementById('productId').value = id;
+    document.getElementById('productForm').action = "{{ url_for('admin_edit_product', product_id=0) }}".replace('0', id);
+    
+    // AJAX запрос для получения данных товара
+    fetch(`/admin/product/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('productTitle').value = data.title;
+            document.getElementById('productCategory').value = data.category_id;
+            document.getElementById('productPrice').value = data.price;
+            document.getElementById('productDescription').value = data.description || '';
+            
+            // Заполняем преимущества
+            if (data.advantages) {
+                document.getElementById('productAdvantages').value = Array.isArray(data.advantages) 
+                    ? data.advantages.join('\n')
+                    : data.advantages;
+            }
+            
+            // Заполняем технические характеристики
+            const specsContainer = document.getElementById('specs-container');
+            specsContainer.innerHTML = '';
+            if (data.specifications) {
+                const specs = typeof data.specifications === 'string' 
+                    ? JSON.parse(data.specifications)
+                    : data.specifications;
+                Object.entries(specs).forEach(([key, value]) => {
+                    const row = document.createElement('div');
+                    row.className = 'spec-row';
+                    row.innerHTML = `
+                        <input type="text" class="spec-key" value="${key}">
+                        <input type="text" class="spec-value" value="${value}">
+                        <button type="button" class="remove-spec">×</button>
+                    `;
+                    specsContainer.appendChild(row);
+                    row.querySelector('.remove-spec').addEventListener('click', () => row.remove());
+                });
+            }
+            
+            // Заполняем опции
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            if (data.options) {
+                const options = typeof data.options === 'string'
+                    ? JSON.parse(data.options)
+                    : data.options;
+                Object.entries(options).forEach(([name, price]) => {
+                    const row = document.createElement('div');
+                    row.className = 'option-row';
+                    row.innerHTML = `
+                        <input type="text" class="option-name" value="${name}">
+                        <input type="number" class="option-price" value="${price}" step="0.01">
+                        <button type="button" class="remove-option">×</button>
+                    `;
+                    optionsContainer.appendChild(row);
+                    row.querySelector('.remove-option').addEventListener('click', () => row.remove());
+                });
+            }
+            
+            document.getElementById('productFormModal').style.display = 'block';
+        });
+}
+
+function deleteProduct(id) {
+    if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+        const formData = new FormData();
+        formData.append('product_id', id);
+        
+        fetch("{{ url_for('admin_delete_product') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при удалении товара');
+            }
+        });
+    }
+}
+
+function closeModal() {
+    document.getElementById('productFormModal').style.display = 'none';
+}
+
+// Закрытие модального окна при клике вне его
+window.onclick = function(event) {
+    const modal = document.getElementById('productFormModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+};
+
+// Обработка технических характеристик
+function addSpecRow() {
+    const row = document.createElement('div');
+    row.className = 'spec-row';
+    row.innerHTML = `
+        <input type="text" class="spec-key" placeholder="Название характеристики">
+        <input type="text" class="spec-value" placeholder="Значение">
+        <button type="button" class="remove-spec">×</button>
+    `;
+    document.getElementById('specs-container').appendChild(row);
+    row.querySelector('.remove-spec').addEventListener('click', () => row.remove());
+}
+
+document.getElementById('add-spec').addEventListener('click', addSpecRow);
+
+// Обработка опций
+function addOptionRow() {
+    const row = document.createElement('div');
+    row.className = 'option-row';
+    row.innerHTML = `
+        <input type="text" class="option-name" placeholder="Название опции">
+        <input type="number" class="option-price" placeholder="Цена" step="0.01">
+        <button type="button" class="remove-option">×</button>
+    `;
+    document.getElementById('options-container').appendChild(row);
+    row.querySelector('.remove-option').addEventListener('click', () => row.remove());
+}
+
+document.getElementById('add-option').addEventListener('click', addOptionRow);
+
+// При отправке формы собираем характеристики и опции в JSON
+document.getElementById('productForm').addEventListener('submit', function(e) {
+    // Собираем технические характеристики
+    const specs = {};
+    document.querySelectorAll('.spec-row').forEach(row => {
+        const key = row.querySelector('.spec-key').value;
+        const value = row.querySelector('.spec-value').value;
+        if (key && value) {
+            specs[key] = value;
+        }
+    });
+    document.getElementById('specs').value = JSON.stringify(specs);
+    
+    // Собираем опции
+    const options = {};
+    document.querySelectorAll('.option-row').forEach(row => {
+        const name = row.querySelector('.option-name').value;
+        const price = row.querySelector('.option-price').value;
+        if (name && price) {
+            options[name] = parseFloat(price);
+        }
+    });
+    document.getElementById('options').value = JSON.stringify(options);
+});
+</script>
+
+<style>
+.spec-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.spec-key,
+.spec-value {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.remove-spec {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-spec:hover {
+    background: #c0392b;
+}
+</style>
+{% endblock %} 

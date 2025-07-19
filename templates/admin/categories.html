@@ -1,0 +1,83 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Управление категориями{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <h1>Управление категориями</h1>
+    <button class="add-button" onclick="showAddCategoryForm()">Добавить категорию</button>
+</div>
+
+<div class="categories-list">
+    {% for category in categories %}
+    <div class="category-card">
+        <div class="category-info">
+            <h3>{{ category.name }}</h3>
+            <p>Товаров: {{ category.products|length }}</p>
+        </div>
+        <div class="category-actions">
+            <button class="edit-button" onclick="editCategory({{ category.id }})">Редактировать</button>
+            <button class="delete-button" onclick="deleteCategory({{ category.id }})">Удалить</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Форма добавления/редактирования категории -->
+<div id="categoryFormModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle">Добавить категорию</h2>
+        <form id="categoryForm" method="POST">
+            <input type="hidden" id="categoryId" name="category_id">
+            <div class="form-group">
+                <label for="categoryName">Название категории</label>
+                <input type="text" id="categoryName" name="name" required>
+            </div>
+            <button type="submit" class="submit-button">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function showAddCategoryForm() {
+    document.getElementById('modalTitle').textContent = 'Добавить категорию';
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryForm').action = "{{ url_for('admin_add_category') }}";
+    document.getElementById('categoryFormModal').style.display = 'block';
+}
+
+function editCategory(id) {
+    document.getElementById('modalTitle').textContent = 'Редактировать категорию';
+    document.getElementById('categoryId').value = id;
+    document.getElementById('categoryForm').action = "{{ url_for('admin_edit_category') }}";
+    // Здесь можно добавить AJAX запрос для получения данных категории
+    document.getElementById('categoryFormModal').style.display = 'block';
+}
+
+function deleteCategory(id) {
+    if (confirm('Вы уверены, что хотите удалить эту категорию?')) {
+        fetch("{{ url_for('admin_delete_category') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ category_id: id })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при удалении категории');
+            }
+        });
+    }
+}
+
+function closeModal() {
+    document.getElementById('categoryFormModal').style.display = 'none';
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Оплата через СБП{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        body { font-family: 'Roboto', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; }
+        .card-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s; }
+        .card-input:focus { background: rgba(255,255,255,0.15); border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
+        .glow-effect { box-shadow: 0 0 15px rgba(99,102,241,0.5); }
+        .btn-pay { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); transition: all 0.3s; }
+        .btn-pay:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74,222,128,0.4); }
+        .btn-cancel { background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); transition: all 0.3s; }
+        .btn-cancel:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
+        .bank-card { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px; transform-style: preserve-3d; perspective: 1000px; }
+        .chip { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 40px; height: 30px; border-radius: 4px; }
+        .input-group { position: relative; }
+        .input-group i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); }
+        .input-group input { padding-left: 40px; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-md mx-auto p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-indigo-400 mb-2">Заказ #<span id="order-number">{{ order_id }}</span></h1>
+        <p class="text-gray-300">Оплата через СБП</p>
+    </div>
+    <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-700 mb-6 glow-effect">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-indigo-300">Перевод на карту</h2>
+                <p class="text-gray-400 text-sm">Онлайн платеж 24/7</p>
+            </div>
+            <div class="text-indigo-400 text-2xl">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+        </div>
+        <div class="bank-card p-4 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-white bg-opacity-20 rounded-full -mr-4 -mt-4"></div>
+            <div class="absolute bottom-0 right-0 w-16 h-16 bg-white bg-opacity-10 rounded-full -mr-4 -mb-4"></div>
+            <div class="flex justify-between items-start mb-6">
+                <div class="text-white text-2xl">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="text-white text-sm font-medium flex items-center">
+                    <img src="data:image/jpeg;base64,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" alt="SBP" class="h-6 mr-2">
+                    Перевод по номеру карты
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="text-white text-opacity-70 text-xs mb-1">Номер карты получателя</div>
+                <div class="flex items-center">
+                    <div class="text-white text-xl font-mono tracking-wider">5599002117777039</div>
+                    <button onclick="copyPhoneNumber()" class="ml-2 text-indigo-300 hover:text-white transition-colors duration-200">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex justify-between">
+                <div>
+                    <div class="text-white text-opacity-70 text-xs mb-1">Получатель</div>
+                    <div class="text-white text-sm font-medium">Иван Андриянович М. (Yandex.Money)</div>
+                </div>
+                <div class="text-white text-2xl">
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+        </div>
+        <form>
+            <div class="mb-4">
+                <label class="block text-gray-300 text-sm font-medium mb-2">
+                    Сумма к оплате <span class="text-red-400">*</span>
+                </label>
+                <div class="text-white text-2xl font-bold">
+                    {{ total|int }} ₽
+                </div>
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-300 text-sm font-medium mb-2" for="email">
+                    Email для уведомления
+                </label>
+                <div class="input-group">
+                    <i class="far fa-envelope"></i>
+                    <input id="email" type="email" class="w-full card-input rounded-lg py-3 px-4 text-white placeholder-gray-400 focus:outline-none" placeholder="Ваш email">
+                </div>
+            </div>
+            <div class="flex flex-col space-y-3">
+                <button type="button" class="btn-pay text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-check-circle mr-2"></i> Оплатил
+                </button>
+                <button type="button" class="btn-cancel text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-times-circle mr-2"></i> Отменить
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="text-center text-gray-400 text-xs">
+        <p class="mb-1">Переводы защищены 256-битным SSL шифрованием</p>
+        <div class="flex justify-center space-x-4">
+            <i class="fab fa-cc-mir text-2xl"></i>
+        </div>
+    </div>
+</div>
+<script>
+    document.querySelector('.btn-pay').addEventListener('click', function() {
+        alert('Платеж успешно выполнен! Средства будут зачислены в течение 5 минут.');
+    });
+    document.querySelector('.btn-cancel').addEventListener('click', function() {
+        if(confirm('Вы действительно хотите отменить перевод?')) {
+            alert('Перевод отменен');
+        }
+    });
+    function copyPhoneNumber() {
+        const phoneNumber = '+7 (992) 255-67-29';
+        const copyBtn = document.querySelector('.fa-copy');
+        copyBtn.classList.remove('fa-copy');
+        navigator.clipboard.writeText(phoneNumber)
+            .then(() => {
+                setTimeout(() => {
+                    copyBtn.classList.remove('fa-check', 'text-green-400');
+                    copyBtn.classList.add('fa-copy');
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка копирования: ', err);
+                copyBtn.classList.remove('fa-check', 'text-green-400');
+                copyBtn.classList.add('fa-copy');
+            });
+    }
+</script>
+{% endblock %} 

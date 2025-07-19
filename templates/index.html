@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}FPV Shop{% endblock %}
+
+{% block content %}
+<div class="main-screen">
+    <div class="header">
+        <button class="menu-button" onclick="window.location.href='/profile'">☰</button>
+        <h1 class="header-title">FPV Shop</h1>
+    </div>
+
+    <div class="categories">
+        <a href="#" class="category active" data-category="0">Все</a>
+        {% for category in categories %}
+        <a href="#" class="category" data-category="{{ category.id }}">
+            {{ category.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="products-grid" id="productsGrid">
+        {% for product in products %}
+        <a href="/product/{{ product.id }}" class="product-card">
+            {% if product.image %}
+            <img src="{{ url_for('static', filename='images/products/' + product.image) }}" alt="{{ product.title }}" class="product-image">
+            {% else %}
+            <div class="product-image no-image">Нет изображения</div>
+            {% endif %}
+            <div class="product-info">
+                <h3 class="product-title">{{ product.title }}</h3>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="product-price">{{ "{:,.0f}".format(product.price).replace(",", " ") }} ₽</div>
+                <div class="product-actions">
+                    <button class="btn-add-to-cart" data-product-id="{{ product.id }}">В корзину</button>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="bottom-bar">
+        <button class="cart-button" onclick="openCart()">
+            <span class="cart-icon">🛒</span>
+            Корзина • <span id="cartCount">{{ cart_count }}</span> товаров • <span id="cartTotal">{{ cart_total }}</span> ₽
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.Telegram.WebApp.ready();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Если пользователь не сохранён в session, отправляем данные Telegram
+        var userId = "{{ session['user']['id'] if session.get('user') else '' }}";
+        if (
+            window.Telegram && window.Telegram.WebApp &&
+            window.Telegram.WebApp.initDataUnsafe &&
+            window.Telegram.WebApp.initDataUnsafe.user &&
+            !userId
+        ) {
+            const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+            fetch('/api/telegram_user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: tgUser.id,
+                    first_name: tgUser.first_name,
+                    last_name: tgUser.last_name,
+                    username: tgUser.username,
+                    photo_url: tgUser.photo_url
+                })
+            }).then(() => location.reload());
+        }
+    });
+
+    function openCart() {
+        window.location.href = '/cart';
+    }
+
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'add-to-cart-success';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Делегирование событий для кнопки "В корзину"
+    document.getElementById('productsGrid').addEventListener('click', async function(e) {
+        if (e.target.classList.contains('btn-add-to-cart')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const productId = e.target.dataset.productId;
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ product_id: productId })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('cartCount').textContent = data.cart_count;
+                    document.getElementById('cartTotal').textContent = data.cart_total.toLocaleString();
+                    e.target.classList.add('added');
+                    setTimeout(() => {
+                        e.target.classList.remove('added');
+                    }, 500);
+                    showNotification('Товар добавлен в корзину');
+                } else {
+                    showNotification('Ошибка при добавлении товара в корзину');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Произошла ошибка при добавлении товара в корзину');
+            }
+        }
+    });
+
+    // Обработка переключения категорий
+    const categories = Array.from(document.querySelectorAll('.category'));
+    let currentCategory = categories[0];
+
+    categories.forEach(category => {
+        category.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Определяем направление переключения на основе физического расположения
+            const currentRect = currentCategory.getBoundingClientRect();
+            const newRect = this.getBoundingClientRect();
+            const direction = newRect.left > currentRect.left ? 'right' : 'left';
+            currentCategory = this;
+            
+            // Удаляем активный класс у всех категорий
+            categories.forEach(c => c.classList.remove('active'));
+            // Добавляем активный класс текущей категории
+            this.classList.add('active');
+            
+            const categoryId = this.dataset.category;
+            const productsGrid = document.getElementById('productsGrid');
+            
+            // Создаем контейнер для нового контента
+            const newContent = document.createElement('div');
+            newContent.className = 'new-content';
+            
+            // Загружаем новые товары
+            fetch(`/category/${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Добавляем новые товары в контейнер
+                    newContent.innerHTML = data.products.map(product => `
+                        <a href="/product/${product.id}" class="product-card">
+                            ${product.image ? 
+                                `<img src="/static/images/products/${product.image}" alt="${product.title}" class="product-image">` :
+                                '<div class="product-image no-image">Нет изображения</div>'
+                            }
+                            <div class="product-info">
+                                <h3 class="product-title">${product.title}</h3>
+                                <p class="product-description">${product.description}</p>
+                                <div class="product-price">${product.price.toLocaleString()} ₽</div>
+                                <div class="product-actions">
+                                    <button class="btn-add-to-cart" data-product-id="${product.id}">В корзину</button>
+                                </div>
+                            </div>
+                        </a>
+                    `).join('');
+                    
+                    // Добавляем новый контент в сетку
+                    productsGrid.appendChild(newContent);
+                    
+                    // Запускаем анимации одновременно
+                    productsGrid.classList.add(`slide-out-${direction}`);
+                    newContent.classList.add(`slide-in-${direction}`);
+                    
+                    // После завершения анимации
+                    setTimeout(() => {
+                        // Удаляем старый контент
+                        const oldContent = productsGrid.querySelector('.product-card');
+                        if (oldContent) {
+                            oldContent.remove();
+                        }
+                        
+                        // Сбрасываем классы анимации
+                        productsGrid.classList.remove(`slide-out-${direction}`);
+                        newContent.classList.remove(`slide-in-${direction}`);
+                        
+                        // Перемещаем новый контент на место старого
+                        productsGrid.innerHTML = newContent.innerHTML;
+                    }, 300);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при загрузке товаров');
+                });
+        });
+    });
+</script>
+{% endblock %} 

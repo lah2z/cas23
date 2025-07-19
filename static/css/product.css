@@ -1,0 +1,132 @@
+.product-page {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.product-container {
+    display: flex;
+    gap: 40px;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.product-image {
+    flex: 1;
+    max-width: 500px;
+}
+
+.product-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.product-details {
+    flex: 1;
+}
+
+.product-details h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.product-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 30px;
+}
+
+.product-advantages,
+.product-specs,
+.product-options,
+.product-description {
+    margin-bottom: 30px;
+}
+
+.product-advantages h2,
+.product-specs h2,
+.product-options h2,
+.product-description h2 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+.product-advantages ul,
+.product-specs ul,
+.product-options ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.product-advantages li,
+.product-specs li,
+.product-options li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.product-advantages li:last-child,
+.product-specs li:last-child,
+.product-options li:last-child {
+    border-bottom: none;
+}
+
+.spec-key {
+    font-weight: 500;
+    color: #666;
+    margin-right: 10px;
+}
+
+.spec-value {
+    color: #333;
+}
+
+.option-name {
+    font-weight: 500;
+    color: #666;
+    margin-right: 10px;
+}
+
+.option-price {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.product-description p {
+    line-height: 1.6;
+    color: #666;
+}
+
+.add-to-cart {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.add-to-cart:hover {
+    background-color: #27ae60;
+}
+
+@media (max-width: 768px) {
+    .product-container {
+        flex-direction: column;
+    }
+    
+    .product-image {
+        max-width: 100%;
+    }
+} 

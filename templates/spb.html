@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% block title %}Оплата через СБП{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        body { font-family: 'Roboto', sans-serif; background: #181826; min-height: 100vh; color: #fff; }
+        .main-gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        }
+        .card-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s; }
+        .card-input:focus { background: rgba(255,255,255,0.15); border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
+        .glow-effect { box-shadow: 0 0 15px rgba(99,102,241,0.5); }
+        .bank-card {
+            background: linear-gradient(135deg, rgb(176,112,191) 0%, rgba(176,112,191,0.2) 100%) !important;
+            border-radius: 12px;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            position: relative;
+            overflow: hidden;
+        }
+        .chip { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 40px; height: 30px; border-radius: 4px; }
+        .input-group { position: relative; }
+        .input-group i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); }
+        .input-group input { padding-left: 40px; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-md mx-auto p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-indigo-400 mb-2">Заказ #<span id="order-number">{{ order.order_number if order else order_id }}</span></h1>
+        <!-- <p class="text-gray-300">Оплата через СБП</p> -->
+    </div>
+    <div class="main-gradient-bg p-6 shadow-xl border border-gray-700 mb-6 glow-effect">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-indigo-300">Перевод на карту</h2>
+                <p class="text-gray-400 text-sm">Онлайн платеж 24/7</p>
+            </div>
+            <div class="text-indigo-400 text-2xl">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+        </div>
+        <div class="bank-card p-4 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-white bg-opacity-20 rounded-full -mr-4 -mt-4"></div>
+            <div class="absolute bottom-0 right-0 w-16 h-16 bg-white bg-opacity-10 rounded-full -mr-4 -mb-4"></div>
+            <div class="flex items-center text-white text-2xl w-full justify-start mb-6">
+                <i class="fas fa-mobile-alt"></i>
+                <i class="fas fa-ruble-sign text-2xl ml-1"></i>
+            </div>
+            <div class="mb-4">
+                <div class="text-white text-opacity-70 text-xs mb-1">Номер карты получателя</div>
+                <div class="flex items-center relative">
+                    <div class="text-white text-xl font-mono tracking-wider select-all pr-8 cursor-pointer" onclick="copyPhoneNumber()">
+                        <span style="letter-spacing:0.2em;">5599</span> <span style="letter-spacing:0.2em;">0021</span> <span style="letter-spacing:0.2em;">1777</span> <span style="letter-spacing:0.2em;">7039</span>
+                    </div>
+                    <button onclick="copyPhoneNumber()" class="absolute right-0 top-1/2 -translate-y-1/2 text-indigo-300 hover:text-white transition-colors duration-200 z-10" style="background:transparent; border:none;">
+                        <i class="far fa-copy"></i>
+                    </button>
+                    <span id="copySuccess" class="absolute right-10 top-1/2 -translate-y-1/2 text-green-400 text-xs bg-gray-900 bg-opacity-80 rounded px-2 py-1 hidden">Скопировано!</span>
+                </div>
+            </div>
+            <div class="flex justify-between">
+                <div>
+                    <div class="text-white text-opacity-70 text-xs mb-1">Получатель</div>
+                    <div class="text-white text-sm font-medium">Иван Андриянович М. (Yandex.Money)</div>
+                </div>
+                <div class="text-white text-2xl">
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+        </div>
+        <form>
+            <div class="mb-4">
+                <label class="block text-gray-300 text-sm font-medium mb-2">
+                    Сумма к оплате <span class="text-red-400">*</span>
+                </label>
+                <div class="text-white text-2xl font-bold">
+                    {{ total|int }} ₽
+                </div>
+            </div>
+            <div class="mb-6">
+                <div class="input-group flex items-center mb-2">
+                    <i class="far fa-envelope text-gray-400 mr-2"></i>
+                    <label class="block text-gray-300 text-sm font-medium" for="email">
+                        Email для уведомления
+                    </label>
+                </div>
+                <div class="input-group">
+                    <input id="email" type="email" class="w-full card-input rounded-lg py-3 px-4 text-gray-800 placeholder-gray-500 focus:outline-none" placeholder="Ваш email">
+                </div>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-pay">
+                    <i class="fas fa-check-circle"></i> Оплатил
+                </button>
+                <button type="button" class="btn-cancel">
+                    <i class="fas fa-times-circle"></i> Отменить
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="text-center text-gray-400 text-xs">
+        <p class="mb-1">Переводы защищены 256-битным SSL шифрованием</p>
+        <div class="flex justify-center space-x-4">
+            <i class="fab fa-cc-mir text-2xl"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения оплаты -->
+<div id="paymentConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <i class="fas fa-check text-green-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Подтверждение оплаты</h3>
+            <p class="text-sm text-gray-500 mb-6">Вы действительно оплатили перевод на сумму {{ total|int }} ₽?</p>
+            <div class="flex space-x-3">
+                <button id="confirmPaymentBtn" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                    Да, оплатил
+                </button>
+                <button id="cancelPaymentBtn" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                    Нет
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения отмены -->
+<div id="cancelConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-times text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Подтверждение отмены</h3>
+            <p class="text-sm text-gray-500 mb-6">Вы действительно хотите отменить перевод?</p>
+            <div class="flex space-x-3">
+                <button id="confirmCancelBtn" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                    Да, отменить
+                </button>
+                <button id="cancelCancelBtn" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                    Нет
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно успешной оплаты -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Платеж в обработке!</h3>
+            <p class="text-sm text-gray-500 mb-6">После потверждения оплаты мы начнем сборку заказа.</p>
+            <button id="closeSuccessBtn" class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                ОК
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно ошибки -->
+<div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Ошибка</h3>
+            <p id="errorMessage" class="text-sm text-gray-500 mb-6">Произошла ошибка при обработке запроса.</p>
+            <button id="closeErrorBtn" class="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                ОК
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    // Функции для работы с модальными окнами
+    function showModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+    }
+    
+    function hideModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+    
+    function showError(message) {
+        document.getElementById('errorMessage').textContent = message;
+        showModal('errorModal');
+    }
+    
+    function updateOrderStatus(status) {
+        const orderId = '{{ order_id }}';
+        if (orderId === 'None' || !orderId) {
+            showError('Ошибка: не найден ID заказа');
+            return;
+        }
+        
+        const orderData = {
+            order_id: parseInt(orderId),
+            status: status
+        };
+        
+        fetch('/update_order_status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (status === 'paid') {
+                    showModal('successModal');
+                } else {
+                    // Для отмены сразу переходим на страницу заказов
+                    window.location.href = '/orders';
+                }
+            } else {
+                showError('Ошибка при обновлении статуса заказа: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Ошибка при обновлении статуса заказа');
+        });
+    }
+    
+    // Обработчики кнопок
+    document.querySelector('.btn-pay').addEventListener('click', function() {
+        showModal('paymentConfirmModal');
+    });
+    
+    document.querySelector('.btn-cancel').addEventListener('click', function() {
+        showModal('cancelConfirmModal');
+    });
+    
+    // Обработчики модальных окон
+    document.getElementById('confirmPaymentBtn').addEventListener('click', function() {
+        hideModal('paymentConfirmModal');
+        updateOrderStatus('paid');
+    });
+    
+    document.getElementById('cancelPaymentBtn').addEventListener('click', function() {
+        hideModal('paymentConfirmModal');
+    });
+    
+    document.getElementById('confirmCancelBtn').addEventListener('click', function() {
+        hideModal('cancelConfirmModal');
+        updateOrderStatus('cancelled');
+    });
+    
+    document.getElementById('cancelCancelBtn').addEventListener('click', function() {
+        hideModal('cancelConfirmModal');
+    });
+    
+    document.getElementById('closeSuccessBtn').addEventListener('click', function() {
+        hideModal('successModal');
+        window.location.href = '/orders';
+    });
+    
+    document.getElementById('closeErrorBtn').addEventListener('click', function() {
+        hideModal('errorModal');
+    });
+    
+    // Закрытие модальных окон при клике вне их
+    document.querySelectorAll('[id$="Modal"]').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideModal(this.id);
+            }
+        });
+    });
+
+    function copyPhoneNumber() {
+        const cardNumber = '5599002117777039';
+        const copyBtn = document.querySelector('.fa-copy');
+        const copySuccess = document.getElementById('copySuccess');
+        copyBtn.classList.remove('fa-copy');
+        navigator.clipboard.writeText(cardNumber)
+            .then(() => {
+                if (copySuccess) {
+                    copySuccess.classList.remove('hidden');
+                    setTimeout(() => {
+                        copySuccess.classList.add('hidden');
+                    }, 1500);
+                }
+                setTimeout(() => {
+                    copyBtn.classList.remove('fa-check', 'text-green-400');
+                    copyBtn.classList.add('fa-copy');
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка копирования: ', err);
+                copyBtn.classList.remove('fa-check', 'text-green-400');
+                copyBtn.classList.add('fa-copy');
+            });
+    }
+</script>
+{% endblock %} 

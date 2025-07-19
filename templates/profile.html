@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-2xl mx-auto px-2 sm:px-4">
+    <!-- Шапка -->
+    <div class="header bg-white p-4 flex items-center shadow-sm sticky top-0 z-10">
+        <a href="/" class="mr-4">
+            <i class="fas fa-chevron-left text-gray-600"></i>
+        </a>
+        <h1 class="text-lg font-semibold">Профиль</h1>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="p-4">
+        <!-- Информация профиля -->
+        <div class="profile-card bg-white rounded-lg p-4 mb-4 flex items-center" id="profileCard" data-user-id="{{ user.id }}">
+            <div class="avatar mr-4">
+                <img src="{{ user.avatar_url if user.avatar_url else 'https://via.placeholder.com/64' }}" alt="Avatar" class="w-16 h-16 rounded-full object-cover">
+            </div>
+            <div class="profile-details">
+                <div class="name text-lg font-semibold">{{ user.name if user.name else 'Пользователь' }}</div>
+                {% if user.username %}
+                    <div class="username text-blue-500 text-sm">@{{ user.username }}</div>
+                {% endif %}
+                <div class="id text-gray-400 text-xs" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; position: relative;" onclick="copyIdToClipboard()">
+                    <span>ID: <span id="userIdText">{{ user.id }}</span></span>
+                    <i class="fas fa-copy" title="Скопировать ID"></i>
+                    <span id="copySuccess" style="display:none; position:absolute; left:100%; top:50%; transform:translateY(-50%); background:#f3f4f6; color:#16a34a; border-radius:6px; padding:2px 8px; font-size:12px; margin-left:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">ID скопирован!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Меню -->
+        <div class="menu-section bg-white rounded-lg overflow-hidden mb-4">
+            <a href="/orders" class="menu-item flex items-center p-4 border-b border-gray-100">
+                <div class="menu-icon orders-icon">
+                    <span style="font-family: 'Noto Color Emoji', sans-serif;">📦</span>
+                </div>
+                <div class="menu-content flex-1 flex justify-between items-center">
+                    <div class="menu-text font-medium">Мои заказы</div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Ссылки -->
+        <div class="links-section bg-white rounded-lg overflow-hidden">
+            <a href="https://t.me/stratim_drones_info" target="_blank" class="link-item block p-4 border-b border-gray-100 font-medium">Поддержка</a>
+            <div class="divider border-b border-gray-100"></div>
+            <a href="/contacts" class="link-item block p-4 border-b border-gray-100 font-medium">Контакты</a>
+            <div class="divider border-b border-gray-100"></div>
+            <a href="/guarantee" class="link-item block p-4 font-medium">Гарантийные обязательства</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Если пользователь не сохранён в session, отправляем данные Telegram
+        var userId = document.getElementById('profileCard').getAttribute('data-user-id');
+        if (
+            window.Telegram && window.Telegram.WebApp &&
+            window.Telegram.WebApp.initDataUnsafe &&
+            window.Telegram.WebApp.initDataUnsafe.user &&
+            !userId
+        ) {
+            const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+            fetch('/api/telegram_user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: tgUser.id,
+                    first_name: tgUser.first_name,
+                    last_name: tgUser.last_name,
+                    username: tgUser.username,
+                    photo_url: tgUser.photo_url
+                })
+            }).then(() => location.reload());
+        }
+        // Установка цветов из WebApp (оставляем, если нужно)
+        if (window.Telegram && window.Telegram.WebApp.themeParams) {
+            document.documentElement.style.setProperty('--button-color', window.Telegram.WebApp.themeParams.button_color);
+            document.documentElement.style.setProperty('--button-text-color', window.Telegram.WebApp.themeParams.button_text_color);
+        }
+    });
+    function copyIdToClipboard() {
+        var id = document.getElementById('userIdText').textContent;
+        navigator.clipboard.writeText(id).then(function() {
+            var el = document.getElementById('copySuccess');
+            el.style.display = 'inline-block';
+            setTimeout(function() {
+                el.style.display = 'none';
+            }, 1500);
+        });
+    }
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .menu-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+    }
+    .orders-icon {
+        background-color: #EFF6FF;
+        color: #3B82F6;
+    }
+</style>
+{% endblock %} 

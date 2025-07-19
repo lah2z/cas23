@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block content %}
+<div class="order-screen">
+    <div class="header">
+        <h1 class="header-title">FPV Shop</h1>
+    </div>
+
+    <div class="content">
+        <h2 class="section-title">Транспортная компания</h2>
+        <div class="delivery-companies">
+            <form id="deliveryForm">
+                <label class="option-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;">
+                    <input type="radio" name="delivery" value="cdek" class="form-radio h-5 w-5 text-blue-600" checked>
+                    <img src="https://papik.pro/grafic/uploads/posts/2023-04/thumbs/1681499998_papik-pro-p-logotip-sdek-vektor-26.jpg" alt="СДЭК" class="delivery-icon">
+                    <div class="option-text">СДЭК</div>
+                </label>
+                <div class="spec-divider"></div>
+                <label class="option-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;">
+                    <input type="radio" name="delivery" value="pochta" class="form-radio h-5 w-5 text-blue-600">
+                    <img src="https://www.pochta.ru/assets/Emblema_Czvetnoj_na_svetlom_78f75308a1.jpg" alt="Почта России" class="delivery-icon">
+                    <div class="option-text">Почта России</div>
+                </label>
+                <div class="spec-divider"></div>
+                <label class="option-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;">
+                    <input type="radio" name="delivery" value="dpd" class="form-radio h-5 w-5 text-blue-600">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMHr-gzDhm4l_l-NfU9eODXC0QqYe6tWwGwg&s" alt="DPD" class="delivery-icon">
+                    <div class="option-text">DPD</div>
+                </label>
+                <div class="spec-divider"></div>
+                <label class="option-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;">
+                    <input type="radio" name="delivery" value="donetsk" class="form-radio h-5 w-5 text-blue-600">
+                    <span class="option-emoji">📍</span>
+                    <div class="option-text">ПВЗ Донецк</div>
+                </label>
+            </form>
+        </div>
+        
+        <h2 class="section-title">Доставка</h2>
+        
+        <div class="address-card">
+            <div class="address-info">
+                <div class="address-input empty" contenteditable="true" data-placeholder="Укажите пункт ПВЗ или полный адрес доставки"></div>
+            </div>
+        </div>
+
+        <div class="delivery-option">
+            <div class="option-item">
+                <span class="option-emoji">🚪</span>
+                <div class="option-text">Доставка до двери</div>
+                <div class="toggle">
+                    <div class="toggle-handle"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="spec-divider"></div>
+
+        <h2 class="section-title">СПОСОБ ОПЛАТЫ</h2>
+        
+        <div class="payment-options">
+            <form id="paymentForm">
+                <label class="option-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;">
+                    <input type="radio" name="payment_method" value="sbp" class="form-radio h-5 w-5 text-blue-600" checked>
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3duc6q4jIb6WqObSkZL9f2IdBYKgjLBshoA&s" alt="СБП" class="payment-icon">
+                    <div class="option-text">Перевод на карту ₽</div>
+                </label>
+                <div class="spec-divider"></div>
+                <label class="option-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;">
+                    <input type="radio" name="payment_method" value="usdt" class="form-radio h-5 w-5 text-blue-600">
+                    <img src="https://coinmetro.com/_next/static/media/USDT.e5b6b9e8.svg" alt="USDT" class="payment-icon">
+                    <div class="option-text">USDT (TON)</div>
+                </label>
+            </form>
+            <div class="spec-divider"></div>
+            <div class="option-item">
+                <svg class="payment-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21.41 11.58L12.41 2.58C12.05 2.22 11.55 2 11 2H4C2.9 2 2 2.9 2 4V11C2 11.55 2.22 12.05 2.59 12.42L11.59 21.42C11.95 21.78 12.45 22 13 22C13.55 22 14.05 21.78 14.41 21.41L21.41 14.41C21.78 14.05 22 13.55 22 13C22 12.45 21.77 11.94 21.41 11.58ZM5.5 7C4.67 7 4 6.33 4 5.5C4 4.67 4.67 4 5.5 4C6.33 4 7 4.67 7 5.5C7 6.33 6.33 7 5.5 7Z" fill="currentColor"/>
+                </svg>
+                <div class="option-text">Промокод</div>
+                <button class="option-button" onclick="togglePromoInput(this)">Указать</button>
+                <div class="promo-input" style="display: none;">
+                    <div class="input-field" contenteditable="true" data-placeholder="Введите промокод"></div>
+                </div>
+            </div>
+            <div class="spec-divider"></div>
+
+        </div>
+
+        <!-- Удалён блок <div id="payment-method-content"></div> -->
+
+
+
+        <div class="phone-section">
+            <div class="option-item">
+                <span class="option-emoji">📱</span>
+                <div class="option-text">Телефон</div>
+            </div>
+            <div class="phone-input" style="display: flex;">
+                <div class="input-field" contenteditable="true" data-placeholder="Введите номер телефона"></div>
+            </div>
+        </div>
+
+        <h2 class="section-title">ФИО получателя</h2>
+        <div class="name-input">
+            <div class="input-field" contenteditable="true" data-placeholder="Введите ФИО"></div>
+        </div>
+
+        <div class="total-section">
+            <div class="total-row">
+                <span class="total-label">Итого</span>
+                <span class="total-amount">{{ total|int }} ₽</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="submit-button">
+            Оплатить
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.Telegram.WebApp.ready();
+
+    // Функция для инициализации плейсхолдера
+    function initPlaceholder(element) {
+        if (element.textContent.trim() === '') {
+            element.classList.add('empty');
+        } else {
+            element.classList.remove('empty');
+        }
+    }
+
+    // Функция для добавления обработчиков для поля ввода
+    function setupInput(input) {
+        input.addEventListener('input', function() {
+            initPlaceholder(this);
+        });
+        initPlaceholder(input);
+    }
+
+    // Инициализация всех полей ввода
+    document.querySelectorAll('.input-field[contenteditable="true"]').forEach(setupInput);
+
+    // Исправленный обработчик выбора доставки
+    function selectDeliveryCompany(checkbox) {
+        // Снимаем выделение со всех чекбоксов
+        document.querySelectorAll('.delivery-companies .method-checkbox').forEach(cb => {
+            cb.classList.remove('checked');
+        });
+        // Отмечаем выбранный чекбокс
+        checkbox.classList.add('checked');
+    }
+    // Назначаем обработчик после загрузки DOM
+    document.querySelectorAll('.delivery-companies .method-checkbox').forEach(cb => {
+        cb.onclick = function() { selectDeliveryCompany(this); };
+    });
+
+    // Функция для переключения поля ввода промокода
+    function togglePromoInput(button) {
+        const parent = button.closest('.option-item');
+        const input = parent.querySelector('.promo-input');
+        if (input.style.display === 'none') {
+            input.style.display = 'block';
+            button.textContent = 'Скрыть';
+            input.querySelector('.input-field').focus();
+        } else {
+            input.style.display = 'none';
+            button.textContent = 'Указать';
+        }
+    }
+
+    // Функция для переключения поля ввода телефона
+    function togglePhoneInput(button) {
+        const phoneInput = document.querySelector('.phone-input');
+        if (phoneInput.style.display === 'none') {
+            phoneInput.style.display = 'flex';
+            button.textContent = 'Скрыть';
+            phoneInput.querySelector('.input-field').focus();
+        } else {
+            phoneInput.style.display = 'none';
+            button.textContent = 'Указать';
+        }
+    }
+
+    // Обработчик для переключателей
+    document.querySelectorAll('.toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            toggle.classList.toggle('active');
+        });
+    });
+
+    // Исправленный обработчик выбора способа оплаты
+    function selectPaymentMethod(radio) {
+        document.querySelectorAll('#paymentForm .option-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        radio.closest('.option-item').classList.add('selected');
+    }
+    document.querySelectorAll('#paymentForm input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            selectPaymentMethod(this);
+        });
+        // Инициализация выделения по умолчанию
+        if (radio.checked) selectPaymentMethod(radio);
+    });
+
+    // Функция для подгрузки страницы оплаты по способу
+    function loadPaymentMethodPage(method) {
+        fetch(`/${method}`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('payment-method-content').innerHTML = html;
+            });
+    }
+    // При смене способа оплаты подгружать нужную страницу
+    document.querySelectorAll('#paymentForm input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            loadPaymentMethodPage(this.value);
+        });
+        // Если выбран по умолчанию, загрузить сразу
+        if (radio.checked) loadPaymentMethodPage(radio.value);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Placeholder для address-input
+        var addressInput = document.querySelector('.address-input[data-placeholder]');
+        if (addressInput) {
+            addressInput.addEventListener('input', function() {
+                if (this.textContent.trim() === '') {
+                    this.classList.add('empty');
+                } else {
+                    this.classList.remove('empty');
+                }
+            });
+            // Инициализация состояния
+            if (addressInput.textContent.trim() === '') {
+                addressInput.classList.add('empty');
+            } else {
+                addressInput.classList.remove('empty');
+            }
+        }
+    });
+
+    // Функция для копирования номера телефона
+    function copyPhoneNumber() {
+        const phoneNumber = '+7 (992) 255-67-29';
+        navigator.clipboard.writeText(phoneNumber).then(function() {
+            // Показываем уведомление об успешном копировании
+            const button = event.target.closest('button');
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalIcon;
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Ошибка при копировании: ', err);
+        });
+    }
+
+    document.querySelector('.submit-button').addEventListener('click', function() {
+        // Собираем данные с формы
+        const address = document.querySelector('.address-input')?.textContent.trim() || '';
+        const fio = document.querySelector('.name-input .input-field')?.textContent.trim() || '';
+        const phone = document.querySelector('.phone-input .input-field')?.textContent.trim() || '';
+        const payment_method = document.querySelector('input[name="payment_method"]:checked')?.value || '';
+        // Доставка
+        const delivery_radio = document.querySelector('input[name="delivery"]:checked');
+        const delivery_method = delivery_radio ? delivery_radio.value : '';
+        // Отправляем данные на сервер
+        fetch('/create_order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                address,
+                fio,
+                phone,
+                payment_method,
+                delivery_method
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (payment_method === 'sbp') {
+                    window.location.href = `/spb?order_id=${data.order_id}`;
+                } else if (payment_method === 'usdt') {
+                    window.location.href = `/ton?order_id=${data.order_id}`;
+                } else {
+                    window.location.href = '/orders';
+                }
+            } else {
+                alert(data.error || 'Ошибка при оформлении заказа');
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %} 
+
+{% block styles %}
+<style>
+    .hidden-radio {
+        display: none;
+    }
+    .method-checkbox {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        border: 2px solid #d1d5db;
+        background: #fff;
+        display: inline-block;
+        transition: background 0.2s, border-color 0.2s;
+        position: relative;
+    }
+    .hidden-radio:checked + .method-checkbox {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+    .hidden-radio:checked + .method-checkbox::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 6px;
+        height: 12px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        border-radius: 1px;
+        transform: rotate(45deg);
+        pointer-events: none;
+    }
+    .form-radio {
+        accent-color: #2563eb;
+    }
+    .address-input[data-placeholder]:empty:before {
+        content: attr(data-placeholder);
+        color: #a1a1aa;
+        pointer-events: none;
+        position: absolute;
+    }
+    .address-input {
+        position: relative;
+        min-height: 24px;
+        outline: none;
+    }
+    .payment-options .option-item.selected {
+        border: 2px solid #2563eb;
+        background: #f0f6ff;
+        border-radius: 12px;
+    }
+    .payment-options .option-item {
+        transition: border 0.2s, background 0.2s;
+        padding: 8px 4px;
+    }
+</style>
+{% endblock %} 

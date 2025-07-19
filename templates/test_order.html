@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест создания заказа</title>
+</head>
+<body>
+    <h1>Тест создания заказа</h1>
+    
+    <form id="orderForm">
+        <div>
+            <label>Адрес:</label>
+            <input type="text" id="address" value="Тестовый адрес" required>
+        </div>
+        <div>
+            <label>Телефон:</label>
+            <input type="text" id="phone" value="+7 (999) 123-45-67" required>
+        </div>
+        <div>
+            <label>ФИО:</label>
+            <input type="text" id="fio" value="Тестовый Пользователь" required>
+        </div>
+        <div>
+            <label>Способ оплаты:</label>
+            <select id="payment_method">
+                <option value="СБП">СБП</option>
+                <option value="TON">TON</option>
+            </select>
+        </div>
+        <div>
+            <label>Способ доставки:</label>
+            <select id="delivery_method">
+                <option value="Доставка">Доставка</option>
+                <option value="Самовывоз">Самовывоз</option>
+            </select>
+        </div>
+        <button type="submit">Создать заказ</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        // Добавляем тестовый товар в корзину
+        fetch('/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: 1,
+                options: []
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Товар добавлен в корзину:', data);
+        })
+        .catch(error => {
+            console.error('Ошибка добавления товара:', error);
+        });
+        
+        // Обработка создания заказа
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                address: document.getElementById('address').value,
+                phone: document.getElementById('phone').value,
+                fio: document.getElementById('fio').value,
+                payment_method: document.getElementById('payment_method').value,
+                delivery_method: document.getElementById('delivery_method').value
+            };
+            
+            console.log('Отправляем данные заказа:', formData);
+            
+            fetch('/create_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                console.log('Статус ответа:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Ответ сервера:', data);
+                document.getElementById('result').innerHTML = 
+                    `<h3>Результат:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                if (data.success) {
+                    // Переходим на страницу оплаты
+                    const paymentUrl = data.payment_method === 'СБП' ? '/spb' : '/ton';
+                    window.location.href = `${paymentUrl}?order_id=${data.order_id}`;
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                document.getElementById('result').innerHTML = 
+                    `<h3>Ошибка:</h3><p>${error.message}</p>`;
+            });
+        });
+    </script>
+</body>
+</html> 
